@@ -1,73 +1,108 @@
-import type { Server } from 'node:http';
+import type {
+  Server,
+} from 'node:http';
+
 import app from './app';
+
 import {
   connectToDatabase,
   disconnectFromDatabase,
 } from './config/database';
+
 import { environment } from './config/environment';
 import { logger } from './config/logger';
 
-let httpServer: Server | undefined;
+import {
+  verifyEmailConfiguration,
+} from './services/email.service';
 
-let shutdownInProgress = false;
+let httpServer:
+  Server | undefined;
+
+let shutdownInProgress =
+  false;
 
 const startServer =
   async (): Promise<void> => {
     await connectToDatabase();
 
-    httpServer = app.listen(
-      environment.PORT,
-      '0.0.0.0',
-      () => {
-        logger.info(
-          {
-            port: environment.PORT,
+    await verifyEmailConfiguration();
 
-            apiPrefix:
-              environment.API_PREFIX,
+    httpServer =
+      app.listen(
+        environment.PORT,
 
-            databaseProvider:
-              'MongoDB Atlas',
-          },
-          'LMS backend started',
-        );
-      },
-    );
+        '0.0.0.0',
+
+        () => {
+          logger.info(
+            {
+              port:
+                environment.PORT,
+
+              apiPrefix:
+                environment
+                  .API_PREFIX,
+
+              databaseProvider:
+                'MongoDB Atlas',
+            },
+
+            'LMS backend started',
+          );
+        },
+      );
   };
 
 const shutdown = async (
-  signal: NodeJS.Signals,
+  signal:
+    NodeJS.Signals,
 ): Promise<void> => {
-  if (shutdownInProgress) {
+  if (
+    shutdownInProgress
+  ) {
     return;
   }
 
-  shutdownInProgress = true;
+  shutdownInProgress =
+    true;
 
   logger.info(
     {
       signal,
     },
+
     'Graceful shutdown started',
   );
 
   const forceShutdownTimer =
-    setTimeout(() => {
-      logger.fatal(
-        'Graceful shutdown timed out. Forcing process exit.',
-      );
+    setTimeout(
+      () => {
+        logger.fatal(
+          'Graceful shutdown timed out. Forcing process exit.',
+        );
 
-      process.exit(1);
-    }, environment.SHUTDOWN_TIMEOUT_MS);
+        process.exit(1);
+      },
 
-  forceShutdownTimer.unref();
+      environment
+        .SHUTDOWN_TIMEOUT_MS,
+    );
+
+  forceShutdownTimer
+    .unref();
 
   try {
     if (httpServer) {
       await new Promise<void>(
-        (resolve, reject) => {
+        (
+          resolve,
+          reject,
+        ) => {
           httpServer?.close(
-            (error) => {
+            (
+              error,
+            ) => {
               if (error) {
                 reject(error);
                 return;
@@ -82,7 +117,9 @@ const shutdown = async (
 
     await disconnectFromDatabase();
 
-    clearTimeout(forceShutdownTimer);
+    clearTimeout(
+      forceShutdownTimer,
+    );
 
     logger.info(
       'Graceful shutdown completed',
@@ -92,8 +129,10 @@ const shutdown = async (
   } catch (error) {
     logger.error(
       {
-        err: error,
+        err:
+          error,
       },
+
       'Graceful shutdown failed',
     );
 
@@ -101,51 +140,80 @@ const shutdown = async (
   }
 };
 
-process.on('SIGINT', () => {
-  void shutdown('SIGINT');
-});
+process.on(
+  'SIGINT',
 
-process.on('SIGTERM', () => {
-  void shutdown('SIGTERM');
-});
+  () =>
+    void shutdown(
+      'SIGINT',
+    ),
+);
+
+process.on(
+  'SIGTERM',
+
+  () =>
+    void shutdown(
+      'SIGTERM',
+    ),
+);
 
 process.on(
   'unhandledRejection',
-  (reason) => {
+
+  (
+    reason,
+  ) => {
     logger.fatal(
       {
-        err: reason,
+        err:
+          reason,
       },
+
       'Unhandled promise rejection',
     );
 
-    void shutdown('SIGTERM');
+    void shutdown(
+      'SIGTERM',
+    );
   },
 );
 
 process.on(
   'uncaughtException',
-  (error) => {
+
+  (
+    error,
+  ) => {
     logger.fatal(
       {
-        err: error,
+        err:
+          error,
       },
+
       'Uncaught exception',
     );
 
-    void shutdown('SIGTERM');
-  },
-);
-
-void startServer().catch(
-  (error) => {
-    logger.fatal(
-      {
-        err: error,
-      },
-      'Application startup failed',
+    void shutdown(
+      'SIGTERM',
     );
-
-    process.exit(1);
   },
 );
+
+void startServer()
+  .catch(
+    (
+      error,
+    ) => {
+      logger.fatal(
+        {
+          err:
+            error,
+        },
+
+        'Application startup failed',
+      );
+
+      process.exit(1);
+    },
+  );

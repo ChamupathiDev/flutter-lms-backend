@@ -1,0 +1,96 @@
+export const COURSE_LEVELS = {
+  BEGINNER: 'BEGINNER',
+  INTERMEDIATE: 'INTERMEDIATE',
+  ADVANCED: 'ADVANCED',
+  ALL_LEVELS: 'ALL_LEVELS',
+} as const;
+
+export type CourseLevel =
+  (typeof COURSE_LEVELS)[keyof typeof COURSE_LEVELS];
+
+export const COURSE_STATUSES = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type CourseStatus =
+  (typeof COURSE_STATUSES)[keyof typeof COURSE_STATUSES];
+
+export const LESSON_TYPES = {
+  TEXT: 'TEXT',
+  VIDEO: 'VIDEO',
+  DOCUMENT: 'DOCUMENT',
+} as const;
+
+export type LessonType =
+  (typeof LESSON_TYPES)[keyof typeof LESSON_TYPES];
+
+export const ENROLLMENT_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type EnrollmentStatus =
+  (typeof ENROLLMENT_STATUSES)[keyof typeof ENROLLMENT_STATUSES];
+
+export const LESSON_PROGRESS_STATUSES = {
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export type LessonProgressStatus =
+  (typeof LESSON_PROGRESS_STATUSES)[keyof typeof LESSON_PROGRESS_STATUSES];
+
+export const QUIZ_QUESTION_TYPES = {
+  SINGLE_CHOICE: 'SINGLE_CHOICE',
+  MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
+  TRUE_FALSE: 'TRUE_FALSE',
+} as const;
+
+export type QuizQuestionType =
+  (typeof QUIZ_QUESTION_TYPES)[keyof typeof QUIZ_QUESTION_TYPES];
+
+export const QUIZ_ATTEMPT_STATUSES = {
+  IN_PROGRESS: 'IN_PROGRESS',
+  SUBMITTED: 'SUBMITTED',
+} as const;
+
+export type QuizAttemptStatus =
+  (typeof QUIZ_ATTEMPT_STATUSES)[keyof typeof QUIZ_ATTEMPT_STATUSES];
+
+export const SUBMISSION_STATUSES = {
+  SUBMITTED: 'SUBMITTED',
+  LATE: 'LATE',
+  GRADED: 'GRADED',
+  RESUBMISSION_REQUIRED: 'RESUBMISSION_REQUIRED',
+} as const;
+
+export type SubmissionStatus =
+  (typeof SUBMISSION_STATUSES)[keyof typeof SUBMISSION_STATUSES];
+
+export const NOTIFICATION_TYPES = {
+  ENROLLMENT_CONFIRMED: 'ENROLLMENT_CONFIRMED',
+  COURSE_PUBLISHED: 'COURSE_PUBLISHED',
+  ASSIGNMENT_PUBLISHED: 'ASSIGNMENT_PUBLISHED',
+  ASSIGNMENT_GRADED: 'ASSIGNMENT_GRADED',
+  QUIZ_RESULT: 'QUIZ_RESULT',
+  COURSE_COMPLETED: 'COURSE_COMPLETED',
+} as const;
+
+export type NotificationType =
+  (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
+
+export const RELATED_ENTITY_TYPES = {
+  COURSE: 'COURSE',
+  ENROLLMENT: 'ENROLLMENT',
+  ASSIGNMENT: 'ASSIGNMENT',
+  SUBMISSION: 'SUBMISSION',
+  QUIZ: 'QUIZ',
+  QUIZ_ATTEMPT: 'QUIZ_ATTEMPT',
+} as const;
+
+export type RelatedEntityType =
+  (typeof RELATED_ENTITY_TYPES)[keyof typeof RELATED_ENTITY_TYPES];

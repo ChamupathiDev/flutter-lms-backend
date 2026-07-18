@@ -5,6 +5,7 @@ const transport =
   environment.NODE_ENV === 'development'
     ? pino.transport({
         target: 'pino-pretty',
+
         options: {
           colorize: true,
           translateTime: 'SYS:standard',
@@ -19,7 +20,8 @@ export const logger = pino(
 
     base: {
       service: 'flutter-lms-backend',
-      environment: environment.NODE_ENV,
+      environment:
+        environment.NODE_ENV,
     },
 
     redact: {
@@ -27,8 +29,12 @@ export const logger = pino(
         'req.headers.authorization',
         'req.body.password',
         'req.body.confirmPassword',
+        'req.body.currentPassword',
+        'req.body.newPassword',
         'req.body.refreshToken',
+        'req.body.resetToken',
       ],
+
       censor: '[REDACTED]',
     },
   },
