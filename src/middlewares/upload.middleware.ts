@@ -3,22 +3,26 @@ import multer from 'multer';
 import { environment } from '../config/environment';
 import { AppError } from '../errors/AppError';
 
-const acceptedImageTypes =
-  new Set([
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-  ]);
+const memoryStorage =
+  multer.memoryStorage();
 
-export const uploadProfileImage =
+const createUpload = (
+  acceptedTypes:
+    Set<string>,
+
+  maxMb:
+    number,
+
+  typeMessage:
+    string,
+) =>
   multer({
     storage:
-      multer.memoryStorage(),
+      memoryStorage,
 
     limits: {
       fileSize:
-        environment
-          .PROFILE_IMAGE_MAX_MB *
+        maxMb *
         1024 *
         1024,
 
@@ -26,7 +30,7 @@ export const uploadProfileImage =
         1,
 
       fields:
-        5,
+        10,
     },
 
     fileFilter: (
@@ -35,15 +39,15 @@ export const uploadProfileImage =
       callback,
     ) => {
       if (
-        !acceptedImageTypes.has(
+        !acceptedTypes.has(
           file.mimetype,
         )
       ) {
         callback(
           new AppError(
-            'Only JPEG, PNG and WebP profile images are allowed',
+            typeMessage,
             415,
-            'UNSUPPORTED_IMAGE_TYPE',
+            'UNSUPPORTED_FILE_TYPE',
           ),
         );
 
@@ -56,3 +60,76 @@ export const uploadProfileImage =
       );
     },
   });
+
+export const uploadProfileImage =
+  createUpload(
+    new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ]),
+
+    environment
+      .PROFILE_IMAGE_MAX_MB,
+
+    'Only JPEG, PNG and WebP images are allowed',
+  );
+
+export const uploadCourseThumbnail =
+  createUpload(
+    new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ]),
+
+    5,
+
+    'Only JPEG, PNG and WebP course thumbnails are allowed',
+  );
+
+export const uploadLessonVideo =
+  createUpload(
+    new Set([
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+    ]),
+
+    100,
+
+    'Only MP4, WebM and MOV lesson videos are allowed',
+  );
+
+export const uploadDocument =
+  createUpload(
+    new Set([
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+    ]),
+
+    20,
+
+    'Only PDF, Word, PowerPoint and text documents are allowed',
+  );
+
+export const uploadAssignmentSubmission =
+  createUpload(
+    new Set([
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'image/jpeg',
+      'image/png',
+      'text/plain',
+    ]),
+
+    20,
+
+    'Only PDF, Word, ZIP, JPEG, PNG and text submission files are allowed',
+  );

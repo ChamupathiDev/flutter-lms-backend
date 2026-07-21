@@ -156,7 +156,7 @@ const environmentSchema = z
         .string()
         .trim()
         .min(1)
-        .default('15m'),
+        .default('30m'),
 
     JWT_REFRESH_EXPIRES_IN:
       z

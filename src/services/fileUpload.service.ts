@@ -1,144 +1,120 @@
-import type {
-  UploadApiResponse,
-} from 'cloudinary';
-
+import type { UploadApiOptions, UploadApiResponse } from 'cloudinary';
 import { cloudinary } from '../config/cloudinary';
 import { environment } from '../config/environment';
 import { AppError } from '../errors/AppError';
 
-export interface UploadedImage {
+export type StoredAssetResourceType = 'image' | 'video' | 'raw';
+
+export interface UploadedAsset {
   url: string;
   publicId: string;
+  resourceType: StoredAssetResourceType;
+  originalFilename?: string;
 }
 
-export const uploadProfileImageBuffer =
-  async (
-    buffer: Buffer,
-    userId: string,
-  ): Promise<UploadedImage> => {
-    if (
-      !environment
-        .CLOUDINARY_ENABLED
-    ) {
-      throw new AppError(
-        'Profile-image storage is not configured',
-        503,
-        'IMAGE_STORAGE_UNAVAILABLE',
-      );
-    }
+interface UploadBufferOptions {
+  buffer: Buffer;
+  ownerId: string;
+  folder: string;
+  resourceType: StoredAssetResourceType;
+  originalFilename?: string;
+  transformation?: UploadApiOptions['transformation'];
+}
 
-    return new Promise<UploadedImage>(
-      (
-        resolve,
-        reject,
-      ) => {
-        const uploadStream =
-          cloudinary
-            .uploader
-            .upload_stream(
-              {
-                folder:
-                  environment
-                    .CLOUDINARY_FOLDER,
+export const uploadAssetBuffer = async ({
+  buffer,
+  ownerId,
+  folder,
+  resourceType,
+  originalFilename,
+  transformation,
+}: UploadBufferOptions): Promise<UploadedAsset> => {
+  if (!environment.CLOUDINARY_ENABLED) {
+    throw new AppError(
+      'File storage is not configured',
+      503,
+      'FILE_STORAGE_UNAVAILABLE',
+    );
+  }
 
-                public_id:
-                  `${userId}-${Date.now()}`,
+  const storageRoot = environment.CLOUDINARY_FOLDER
+    .replace(/(?:^|\/)profile-images\/?$/i, '')
+    .replace(/\/+$/g, '');
+  const destinationFolder = storageRoot ? `${storageRoot}/${folder}` : folder;
 
-                resource_type:
-                  'image',
+  return new Promise<UploadedAsset>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: destinationFolder,
+        public_id: `${ownerId}-${Date.now()}`,
+        resource_type: resourceType,
+        overwrite: false,
+        use_filename: false,
+        unique_filename: true,
+        transformation,
+      },
+      (error, result?: UploadApiResponse) => {
+        if (error || !result) {
+          reject(
+            new AppError(
+              'The file could not be uploaded',
+              503,
+              'FILE_UPLOAD_FAILED',
+            ),
+          );
+          return;
+        }
 
-                overwrite:
-                  false,
-
-                transformation: [
-                  {
-                    width:
-                      600,
-
-                    height:
-                      600,
-
-                    crop:
-                      'fill',
-
-                    gravity:
-                      'face',
-
-                    quality:
-                      'auto',
-
-                    fetch_format:
-                      'auto',
-                  },
-                ],
-              },
-
-              (
-                error,
-                result?:
-                  UploadApiResponse,
-              ) => {
-                if (
-                  error ||
-                  !result
-                ) {
-                  reject(
-                    new AppError(
-                      'The profile image could not be uploaded',
-                      503,
-                      'IMAGE_UPLOAD_FAILED',
-                    ),
-                  );
-
-                  return;
-                }
-
-                resolve({
-                  url:
-                    result
-                      .secure_url,
-
-                  publicId:
-                    result
-                      .public_id,
-                });
-              },
-            );
-
-        uploadStream.end(
-          buffer,
-        );
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+          resourceType,
+          originalFilename,
+        });
       },
     );
-  };
 
-export const deleteStoredImage =
-  async (
-    publicId?: string,
-  ): Promise<void> => {
-    if (
-      !publicId ||
-      !environment
-        .CLOUDINARY_ENABLED
-    ) {
-      return;
-    }
+    uploadStream.end(buffer);
+  });
+};
 
-    try {
-      await cloudinary
-        .uploader
-        .destroy(
-          publicId,
-          {
-            resource_type:
-              'image',
+export const deleteStoredAsset = async (
+  publicId?: string,
+  resourceType: StoredAssetResourceType = 'image',
+): Promise<void> => {
+  if (!publicId || !environment.CLOUDINARY_ENABLED) {
+    return;
+  }
 
-            invalidate:
-              true,
-          },
-        );
-    } catch {
-      // A cleanup failure should not
-      // make the user operation fail.
-    }
-  };
+  try {
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+      invalidate: true,
+    });
+  } catch {
+    // Storage cleanup must not make the database operation fail.
+  }
+};
+
+export const uploadProfileImageBuffer = async (
+  buffer: Buffer,
+  userId: string,
+): Promise<UploadedAsset> => uploadAssetBuffer({
+  buffer,
+  ownerId: userId,
+  folder: 'profile-images',
+  resourceType: 'image',
+  transformation: [
+    {
+      width: 600,
+      height: 600,
+      crop: 'fill',
+      gravity: 'face',
+      quality: 'auto',
+      fetch_format: 'auto',
+    },
+  ],
+});
+
+export const deleteStoredImage = async (publicId?: string): Promise<void> =>
+  deleteStoredAsset(publicId, 'image');
