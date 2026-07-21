@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1
 
+# ---------------------------------------
+# Stage 1: Install all dependencies
+# ---------------------------------------
 FROM node:22-alpine AS dependencies
 
 WORKDIR /app
@@ -9,17 +12,22 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 
+# ---------------------------------------
+# Stage 2: Build TypeScript application
+# ---------------------------------------
 FROM dependencies AS build
 
 WORKDIR /app
 
 COPY tsconfig.json ./
-
 COPY src ./src
 
 RUN npm run build
 
 
+# ---------------------------------------
+# Stage 3: Install production dependencies
+# ---------------------------------------
 FROM node:22-alpine AS production-dependencies
 
 WORKDIR /app
@@ -32,6 +40,9 @@ RUN npm ci --omit=dev \
     && npm cache clean --force
 
 
+# ---------------------------------------
+# Stage 4: Final runtime image
+# ---------------------------------------
 FROM node:22-alpine AS runner
 
 WORKDIR /app
@@ -50,6 +61,9 @@ COPY --from=build \
     ./dist
 
 COPY package.json ./
+
+# Copy integration configuration into the image as /app/.env
+COPY --chown=nodeapp:nodejs .env.intergration ./.env
 
 USER nodeapp
 
